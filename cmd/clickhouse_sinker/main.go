@@ -426,7 +426,7 @@ func (s *Sinker) applyFirstConfig(newCfg *config.Config) (err error) {
 
 	// 2. Start goroutine pools.
 	util.InitGlobalTimerWheel()
-	util.InitGlobalParsingPool()
+	util.InitGlobalParsingPool(1)
 	util.InitGlobalWritingPool(len(chCfg.Hosts) * chCfg.MaxOpenConns)
 
 	// 3. Generate, initialize and run task

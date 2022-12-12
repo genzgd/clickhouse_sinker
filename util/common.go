@@ -56,17 +56,22 @@ func InitGlobalTimerWheel() {
 }
 
 // InitGlobalParsingPool initialize GlobalParsingPool
-func InitGlobalParsingPool() {
+func InitGlobalParsingPool(max int) {
 	if GlobalParsingPool != nil {
 		return
 	}
 	maxWorkers := 10
-	if runtime.NumCPU() >= 2 {
-		if maxWorkers > runtime.NumCPU()/2 {
-			maxWorkers = runtime.NumCPU() / 2
+	if max == 0 {
+
+		if runtime.NumCPU() >= 2 {
+			if maxWorkers > runtime.NumCPU()/2 {
+				maxWorkers = runtime.NumCPU() / 2
+			}
+		} else {
+			maxWorkers = 1
 		}
 	} else {
-		maxWorkers = 1
+		maxWorkers = max
 	}
 	queueSize := 1 << 16
 	GlobalParsingPool = NewWorkerPool(maxWorkers, queueSize)

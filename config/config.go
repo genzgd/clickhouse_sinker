@@ -27,12 +27,17 @@ import (
 	"github.com/thanos-io/thanos/pkg/errors"
 )
 
+type PoolConfig struct {
+	ParsingPool int
+}
+
 // Config struct used for different configurations use
 type Config struct {
 	Kafka      KafkaConfig
 	Clickhouse ClickHouseConfig
 	Task       *TaskConfig
 	Tasks      []*TaskConfig
+	Pools      PoolConfig
 	Assignment Assignment
 	LogLevel   string
 }

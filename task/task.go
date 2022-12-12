@@ -68,7 +68,7 @@ type Service struct {
 
 	wgRun     sync.WaitGroup
 	state     uint32
-	numFlying int32
+	numFlying atomic.Int32
 	taskDone  *sync.Cond
 }
 
@@ -101,7 +101,6 @@ func NewTaskService(cfg *config.Config, taskCfg *config.TaskConfig) (service *Se
 func (service *Service) Init() (err error) {
 	taskCfg := service.taskCfg
 	util.Logger.Info("task initializing", zap.String("task", taskCfg.Name))
-	service.numFlying = 0
 	atomic.StoreUint32(&service.state, util.StateRunning)
 	if err = service.clickhouse.Init(); err != nil {
 		return
@@ -271,9 +270,7 @@ func (service *Service) put(msg *model.InputMessage) {
 	}
 	// submit message to the parsing pool
 	taskCfg := service.taskCfg
-	service.Lock()
-	service.numFlying++
-	service.Unlock()
+	service.numFlying.Add(1)
 	statistics.ParsingPoolBacklog.WithLabelValues(taskCfg.Name).Inc()
 	_ = util.GlobalParsingPool.Submit(func() {
 		var err error
@@ -281,12 +278,10 @@ func (service *Service) put(msg *model.InputMessage) {
 		var foundNewKeys bool
 		var metric model.Metric
 		defer func() {
-			service.Lock()
-			service.numFlying--
-			if service.numFlying == 0 {
+			var flying = service.numFlying.Add(-1)
+			if flying == 0 {
 				service.taskDone.Broadcast()
 			}
-			service.Unlock()
 			statistics.ParsingPoolBacklog.WithLabelValues(taskCfg.Name).Dec()
 		}()
 		p := service.pp.Get()
@@ -344,13 +339,13 @@ func (service *Service) put(msg *model.InputMessage) {
 	})
 }
 
-// drain ensure we have completeted procession(discard or write&commit) for all received messages, and cleared service state.
+// drain ensure we have completed procession(discard or write&commit) for all received messages, and cleared service state.
 func (service *Service) drain() {
 	savedState := atomic.SwapUint32(&service.state, util.StateStopped)
 	defer atomic.CompareAndSwapUint32(&service.state, util.StateStopped, savedState)
 	begin := time.Now()
 	service.Lock()
-	for service.numFlying != 0 {
+	for service.numFlying.Load() != 0 {
 		service.taskDone.Wait()
 	}
 	for _, ring := range service.rings {

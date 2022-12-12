@@ -9,6 +9,7 @@ require (
 	github.com/bytedance/sonic v1.5.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/fagongzi/goetty v1.7.0
+	github.com/goccy/go-json v0.10.0
 	github.com/google/gops v0.3.25
 	github.com/hjson/hjson-go/v4 v4.2.0
 	github.com/jcmturner/gokrb5/v8 v8.4.3
@@ -18,6 +19,7 @@ require (
 	github.com/prometheus/common v0.37.0
 	github.com/segmentio/kafka-go v0.4.34
 	github.com/shopspring/decimal v1.3.1
+	github.com/stretchr/objx v0.5.0
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/thanos v0.27.0
 	github.com/tidwall/gjson v1.14.2

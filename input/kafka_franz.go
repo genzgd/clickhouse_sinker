@@ -83,9 +83,6 @@ func (k *KafkaFranz) Init(cfg *config.Config, taskCfg *config.TaskConfig, putFn 
 		kgo.ConsumerGroup(taskCfg.ConsumerGroup),
 		kgo.DisableAutoCommit(),
 		kgo.OnPartitionsRevoked(k.onPartitionRevoked))
-	if !taskCfg.Earliest {
-		opts = append(opts, kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()))
-	}
 
 	if k.cl, err = kgo.NewClient(opts...); err != nil {
 		err = errors.Wrapf(err, "")
@@ -195,7 +192,7 @@ func (k *KafkaFranz) CommitMessages(msg *model.InputMessage) error {
 	// "LeaderEpoch: -1" will disable leader epoch validation
 	var err error
 	for i := 0; i < CommitRetries; i++ {
-		err = k.cl.CommitRecords(context.Background(), &kgo.Record{Topic: msg.Topic, Partition: int32(msg.Partition), Offset: msg.Offset, LeaderEpoch: -1})
+		err = k.cl.CommitUncommittedOffsets(k.ctx)
 		if err == nil {
 			break
 		}
